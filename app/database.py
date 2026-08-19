@@ -57,3 +57,33 @@ async def init_db() -> None:
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await _add_missing_columns(conn)
+
+
+async def _add_missing_columns(conn) -> None:
+    """Lightweight auto-migration for existing deployments.
+
+    `create_all` only creates tables that don't exist yet — it never alters
+    an existing table, so a column added to an ORM model after the database
+    file already exists (e.g. on a redeploy with a persistent volume) would
+    otherwise cause "no such column" errors at runtime. There's no Alembic
+    in this MVP, so instead: for each (table, column, DDL type) we expect,
+    add it via ALTER TABLE if missing. Safe to run on every startup — a
+    brand-new database already has the column from create_all, so the
+    ALTER is simply skipped.
+    """
+    if "sqlite" not in settings.database_url:
+        # This PRAGMA-based check is SQLite-specific; a real Postgres
+        # deployment should use proper Alembic migrations instead.
+        return
+
+    expected_columns = [
+        ("defects", "impact_explanation", "TEXT"),
+    ]
+    for table, column, ddl_type in expected_columns:
+        result = await conn.exec_driver_sql(f"PRAGMA table_info({table})")
+        existing = {row[1] for row in result.fetchall()}
+        if column not in existing:
+            await conn.exec_driver_sql(
+                f"ALTER TABLE {table} ADD COLUMN {column} {ddl_type}"
+            )

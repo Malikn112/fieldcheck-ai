@@ -28,6 +28,7 @@ def test_visual_defect_requires_valid_severity():
             defect_type="Corrosion",
             severity="Extreme",  # not a valid enum value
             location_description="Base",
+            impact_explanation="Corrosion risks a slow leak if untreated.",
             recommendation="Fix it",
         )
 
@@ -35,9 +36,20 @@ def test_visual_defect_requires_valid_severity():
         defect_type="Corrosion",
         severity="High",
         location_description="Base",
+        impact_explanation="Corrosion risks a slow leak if untreated.",
         recommendation="Fix it",
     )
     assert ok.severity.value == "High"
+
+
+def test_visual_defect_requires_impact_explanation():
+    with pytest.raises(ValidationError):
+        VisualDefect(
+            defect_type="Corrosion",
+            severity="High",
+            location_description="Base",
+            recommendation="Fix it",
+        )
 
 
 def test_full_inspection_report_schema_roundtrip():
@@ -48,6 +60,8 @@ def test_full_inspection_report_schema_roundtrip():
                 defect_type="Leak",
                 severity="Critical",
                 location_description="Base fitting",
+                impact_explanation="Active leak risks pressure loss and a safety exposure "
+                "to nearby personnel.",
                 recommendation="Isolate immediately",
             )
         ],

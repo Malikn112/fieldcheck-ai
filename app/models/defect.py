@@ -36,6 +36,11 @@ class Defect(Base):
     )
     location_description: Mapped[str | None] = mapped_column(Text, nullable=True)
     recommendation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Why this defect matters — root cause + operational/safety consequence
+    # if left unaddressed. Kept separate from `recommendation` (the action
+    # to take) so the report can clearly answer both "what should we do"
+    # and "why does it matter" for a non-technical reader.
+    impact_explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     inspection: Mapped["Inspection"] = relationship("Inspection", back_populates="defects")
 

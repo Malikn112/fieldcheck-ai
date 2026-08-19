@@ -22,8 +22,6 @@
     form: $("upload-form"),
     dropzone: $("dropzone"),
     fileInput: $("file-input"),
-    cameraInput: $("camera-input"),
-    cameraBtn: $("camera-btn"),
     dropzoneEmpty: $("dropzone-empty"),
     dropzonePreview: $("dropzone-preview"),
     previewImg: $("preview-img"),
@@ -85,20 +83,6 @@
     if (file) handleFileSelected(file);
   });
   els.fileInput.addEventListener("change", (e) => {
-    const file = e.target.files?.[0];
-    if (file) handleFileSelected(file);
-  });
-
-  // "Take Photo" — a dedicated button (in addition to plain browse) so the
-  // camera opens directly on phones/tablets, rather than relying on users
-  // to notice their mobile browser's file picker also offers a camera
-  // option. `capture="environment"` on this input requests the rear camera;
-  // desktop browsers simply ignore it and fall back to a normal file dialog.
-  els.cameraBtn.addEventListener("click", (e) => {
-    e.stopPropagation(); // don't also trigger the dropzone's own click->browse handler
-    els.cameraInput.click();
-  });
-  els.cameraInput.addEventListener("change", (e) => {
     const file = e.target.files?.[0];
     if (file) handleFileSelected(file);
   });
@@ -245,6 +229,7 @@
             <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${severityColors[d.severity] || "bg-gray-100 text-gray-700"}">${escapeHtml(d.severity)}</span>
           </div>
           <p class="text-xs text-gray-500 mb-1">Location: ${escapeHtml(d.location_description || "—")}</p>
+          ${d.impact_explanation ? `<p class="text-xs text-gray-700 mb-1"><span class="font-medium">Why it matters:</span> ${escapeHtml(d.impact_explanation)}</p>` : ""}
           <p class="text-xs text-gray-700"><span class="font-medium">Recommendation:</span> ${escapeHtml(d.recommendation || "—")}</p>
         `;
         els.defectList.appendChild(div);

@@ -132,6 +132,9 @@ _TEMPLATE = """
             </span>
           </div>
           <div style="font-size:13px; color:#6b7280;">Location: {{ d.location_description or '—' }}</div>
+          {% if d.impact_explanation %}
+          <div class="rec" style="margin-top:8px;"><strong>Why it matters:</strong> {{ d.impact_explanation }}</div>
+          {% endif %}
           <div class="rec"><strong>Recommendation:</strong> {{ d.recommendation or '—' }}</div>
         </div>
         {% endfor %}

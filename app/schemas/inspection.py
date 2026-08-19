@@ -35,6 +35,7 @@ class DefectOut(BaseModel):
     defect_type: str
     severity: DefectSeverity
     location_description: str | None = None
+    impact_explanation: str | None = None
     recommendation: str | None = None
 
 

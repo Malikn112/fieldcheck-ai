@@ -50,15 +50,24 @@ Carefully analyze the image and:
 manufacturer, model number, and serial/tag number. If text is not legible or not \
 present, use null and lower the confidence score accordingly.
 2. Identify visible physical defects (corrosion, leaks, cracks, loose or missing \
-bolts, damaged gauges, exposed wiring, missing safety guards, etc.) with severity \
-and a concrete recommendation for each.
+bolts, damaged gauges, exposed wiring, missing safety guards, etc.). For EACH defect \
+you must clearly explain the underlying PAIN POINT, not just label it: state the \
+likely root cause, and spell out the concrete operational, safety, or cost \
+consequence of leaving it unaddressed (e.g. "this corrosion is thinning the fitting \
+wall, which risks a pressure leak and unplanned downtime if not repainted soon"). \
+Write this for a plant manager who is not an engineer — be specific and concrete, \
+never generic filler like "may cause issues." Then give a concrete recommendation \
+(what to do, by when).
 3. Evaluate safety/regulatory compliance based on what is visually observable and \
 flag any hazards that require immediate action.
-4. Provide an overall condition rating and a concise supervisor-facing summary.
+4. Provide an overall condition rating and a supervisor-facing summary that names \
+the single biggest pain point driving that rating and its real-world consequence — \
+do not just restate the condition label.
 
 Respond ONLY with data matching the required JSON schema. Do not invent nameplate \
 data you cannot actually see in the image — prefer null/low confidence over \
-fabrication."""
+fabrication. Never write a vague or generic explanation when a concrete, specific \
+one is possible from what's visible in the image."""
 
 
 def _make_openai_strict_schema(schema: dict) -> dict:
@@ -146,12 +155,23 @@ def _mock_inspection_result(image_path: Path) -> InspectionReportSchema:
     conditions = ["GOOD", "ACCEPTABLE", "POOR", "CRITICAL"]
     defect_pool = [
         ("Corrosion", "Medium", "Base fitting / housing edge",
+         "Surface corrosion is thinning the metal at the fitting edge. Left unaddressed, "
+         "this typically progresses to pitting and a slow leak — an unplanned shutdown to "
+         "fix later instead of a scheduled repaint now.",
          "Clean corrosion and repaint; re-inspect within 90 days."),
         ("Loose Bolt", "Low", "Lower-left mounting bracket",
+         "A loose mounting bolt lets the housing vibrate under normal operation, which "
+         "accelerates wear on the mount and can eventually let the unit shift out of "
+         "alignment.",
          "Torque bolt to spec at next scheduled maintenance."),
         ("Illegible Dial Markings", "Low", "Gauge face",
+         "Worn or fogged dial markings mean an operator can't get a reliable reading at a "
+         "glance, which risks a missed early warning if the reading drifts out of range.",
          "Schedule cleaning or replacement of the dial cover."),
         ("Leak Residue", "High", "Threaded connection at base",
+         "Residue at the threaded connection indicates fluid is already escaping the seal. "
+         "If this is pressurized fluid, continued operation risks a sudden pressure loss "
+         "and possible safety exposure to nearby personnel.",
          "Isolate and inspect for active leak before returning to service."),
     ]
 
@@ -163,7 +183,8 @@ def _mock_inspection_result(image_path: Path) -> InspectionReportSchema:
             defect_type=d[0],
             severity=d[1],
             location_description=d[2],
-            recommendation=d[3],
+            impact_explanation=d[3],
+            recommendation=d[4],
         )
         for d in rng.sample(defect_pool, k=num_defects)
     ]
@@ -187,9 +208,13 @@ def _mock_inspection_result(image_path: Path) -> InspectionReportSchema:
         ),
         overall_condition=condition,
         overall_summary=(
-            f"[MOCK ANALYSIS] {asset_type} assessed as {condition}. "
-            f"{len(defects)} defect(s) noted. This is a simulated result generated because "
-            f"VISION_MOCK_MODE is enabled or no vision API key is configured."
+            f"[MOCK ANALYSIS — not a real assessment] {asset_type} assessed as {condition}, "
+            f"with {len(defects)} defect(s) noted"
+            + (f"; the leading concern is {defects[0].defect_type.lower()}." if defects else ".")
+            + " This is a simulated result because VISION_MOCK_MODE is enabled or no vision "
+            "API key is configured — set OPENAI_API_KEY (or ANTHROPIC_API_KEY) and "
+            "VISION_MOCK_MODE=false to get real AI-analyzed pain points instead of this "
+            "placeholder text."
         ),
     )
 

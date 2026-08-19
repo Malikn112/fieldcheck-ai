@@ -66,8 +66,16 @@ class VisualDefect(BaseModel):
     location_description: str = Field(
         description="Where on the asset the defect is located, e.g. 'Top-left flange bolt'."
     )
+    impact_explanation: str = Field(
+        description="Plain-language explanation of the PAIN POINT this defect causes: the "
+        "likely root cause, and the concrete operational, safety, or cost consequence if it "
+        "is left unaddressed (e.g. 'Corrosion is actively thinning the fitting wall; if it "
+        "progresses it can lead to a pressure leak and unplanned downtime'). Write for a "
+        "non-technical supervisor, not a fellow engineer."
+    )
     recommendation: str = Field(
-        description="Concrete, actionable recommendation for the maintenance/inspection team."
+        description="Concrete, actionable recommendation for the maintenance/inspection team — "
+        "what to do and by when."
     )
 
 
@@ -96,8 +104,10 @@ class InspectionReportSchema(BaseModel):
         description="Overall asset condition rating synthesizing defects + compliance."
     )
     overall_summary: str = Field(
-        description="2-4 sentence plain-language summary of the inspection findings for a "
-        "quality supervisor."
+        description="3-5 sentence plain-language summary for a quality supervisor. Must "
+        "connect the dots: what condition is the asset in, what is the single biggest pain "
+        "point driving that rating, and what is the real-world consequence (safety, "
+        "downtime, cost) of not acting on it soon."
     )
 
     model_config = {
@@ -116,6 +126,10 @@ class InspectionReportSchema(BaseModel):
                             "defect_type": "Corrosion",
                             "severity": "Medium",
                             "location_description": "Base fitting threads",
+                            "impact_explanation": "Surface corrosion has started eating into "
+                            "the fitting threads; left alone this typically progresses to "
+                            "thread seizure or a slow leak, which would take the gauge out of "
+                            "service unexpectedly.",
                             "recommendation": "Clean and inspect threads; monitor for progression "
                             "at next scheduled inspection.",
                         }
@@ -127,7 +141,9 @@ class InspectionReportSchema(BaseModel):
                     },
                     "overall_condition": "ACCEPTABLE",
                     "overall_summary": "Gauge is functional with minor surface corrosion on the "
-                    "base fitting. No immediate safety concerns identified.",
+                    "base fitting threads. The main pain point is early-stage thread corrosion "
+                    "that, if ignored, risks a slow leak and unplanned downtime. No immediate "
+                    "safety concerns identified — routine monitoring is sufficient for now.",
                 }
             ]
         }

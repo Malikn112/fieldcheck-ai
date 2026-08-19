@@ -69,6 +69,7 @@ async def process_inspection(inspection_id: str) -> None:
                         defect_type=d.defect_type,
                         severity=d.severity.value,
                         location_description=d.location_description,
+                        impact_explanation=d.impact_explanation,
                         recommendation=d.recommendation,
                     )
                 )
