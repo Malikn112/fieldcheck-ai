@@ -22,6 +22,8 @@
     form: $("upload-form"),
     dropzone: $("dropzone"),
     fileInput: $("file-input"),
+    cameraInput: $("camera-input"),
+    cameraBtn: $("camera-btn"),
     dropzoneEmpty: $("dropzone-empty"),
     dropzonePreview: $("dropzone-preview"),
     previewImg: $("preview-img"),
@@ -83,6 +85,20 @@
     if (file) handleFileSelected(file);
   });
   els.fileInput.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileSelected(file);
+  });
+
+  // "Take Photo" — a dedicated button (in addition to plain browse) so the
+  // camera opens directly on phones/tablets, rather than relying on users
+  // to notice their mobile browser's file picker also offers a camera
+  // option. `capture="environment"` on this input requests the rear camera;
+  // desktop browsers simply ignore it and fall back to a normal file dialog.
+  els.cameraBtn.addEventListener("click", (e) => {
+    e.stopPropagation(); // don't also trigger the dropzone's own click->browse handler
+    els.cameraInput.click();
+  });
+  els.cameraInput.addEventListener("change", (e) => {
     const file = e.target.files?.[0];
     if (file) handleFileSelected(file);
   });
