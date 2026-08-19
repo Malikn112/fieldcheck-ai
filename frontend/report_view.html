@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FieldCheck AI — Report Viewer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" />
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  @media print { .no-print { display: none !important; } }
+</style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <div class="no-print bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div class="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold">FC</div>
+        <span class="font-semibold text-sm">FieldCheck AI — Report Viewer</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <input id="id-input" type="text" placeholder="Paste inspection ID…"
+               class="text-xs border border-gray-300 rounded-lg px-3 py-1.5 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <button id="load-btn" class="text-xs bg-gray-900 text-white rounded-lg px-3 py-1.5 hover:bg-gray-800">Load</button>
+        <button id="print-btn" class="text-xs border border-gray-300 rounded-lg px-3 py-1.5 hover:bg-gray-50">
+          <i class="fa-solid fa-print"></i> Print / Save PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-4xl mx-auto px-6 py-8">
+    <div id="empty-state" class="bg-white border border-dashed border-gray-300 rounded-xl p-16 text-center text-gray-400">
+      Enter an inspection ID above (or open this page as <code>report_view.html?id=&lt;inspection_id&gt;</code>) to load a report.
+    </div>
+    <div id="error-state" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3"></div>
+    <iframe id="report-frame" class="hidden w-full bg-white rounded-xl border border-gray-200 shadow-sm" style="min-height: 1100px;"></iframe>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+      const API_BASE = window.FIELDCHECK_API_BASE || `${window.location.protocol}//${window.location.host}`;
+      const API_V1 = `${API_BASE}/api/v1`;
+
+      const $ = (id) => document.getElementById(id);
+      const idInput = $("id-input");
+      const loadBtn = $("load-btn");
+      const printBtn = $("print-btn");
+      const emptyState = $("empty-state");
+      const errorState = $("error-state");
+      const frame = $("report-frame");
+
+      function loadReport(id) {
+        if (!id) return;
+        errorState.classList.add("hidden");
+        fetch(`${API_V1}/inspections/${id}/report`)
+          .then(async (res) => {
+            if (!res.ok) {
+              const text = await res.text();
+              throw new Error(`Could not load report (HTTP ${res.status}). ${text.slice(0, 200)}`);
+            }
+            return res.text();
+          })
+          .then((html) => {
+            emptyState.classList.add("hidden");
+            frame.classList.remove("hidden");
+            frame.srcdoc = html;
+            frame.onload = () => {
+              try {
+                const doc = frame.contentDocument;
+                frame.style.height = doc.documentElement.scrollHeight + 40 + "px";
+              } catch (e) {}
+            };
+          })
+          .catch((err) => {
+            frame.classList.add("hidden");
+            errorState.classList.remove("hidden");
+            errorState.textContent = err.message;
+          });
+      }
+
+      loadBtn.addEventListener("click", () => loadReport(idInput.value.trim()));
+      idInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") loadReport(idInput.value.trim());
+      });
+      printBtn.addEventListener("click", () => {
+        if (frame.contentWindow) frame.contentWindow.print();
+        else window.print();
+      });
+
+      const params = new URLSearchParams(window.location.search);
+      const idFromUrl = params.get("id");
+      if (idFromUrl) {
+        idInput.value = idFromUrl;
+        loadReport(idFromUrl);
+      }
+    })();
+  </script>
+</body>
+</html>

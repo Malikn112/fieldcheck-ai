@@ -1,0 +1,60 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: fieldcheck-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build: .
+    container_name: fieldcheck-api
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/fieldcheck.db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./output_reports:/app/output_reports
+      - ./data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build: .
+    container_name: fieldcheck-worker
+    command: celery -A app.services.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - USE_CELERY=true
+      - DATABASE_URL=sqlite+aiosqlite:///./data/fieldcheck.db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    volumes:
+      - ./uploads:/app/uploads
+      - ./output_reports:/app/output_reports
+      - ./data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    profiles:
+      - celery
+    restart: unless-stopped
+
+networks:
+  default:
+    name: fieldcheck-network
